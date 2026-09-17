@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CoWatch — Ad-Free Real-Time Watch Party & Voice Chat</title>
+  <meta name="description" content="Host and join serverless, ad-free watch parties with synchronized video, free voice chat, and real-time messaging on GitHub Pages." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- External Libraries (CDN) -->
+  <!-- PeerJS for WebRTC Mesh Data & Audio -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- HLS.js for direct M3U8 streaming -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="cinema-theme">
+  <!-- Audio Elements Container for VoIP -->
+  <div id="remote-audios" class="hidden-audio-rack"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo" id="btn-home">
+        <div class="logo-icon-glow">
+          <i data-lucide="tv-minimal-play"></i>
+        </div>
+        <div class="brand-text">
+          <span class="logo-title">Co<span class="gradient-text">Watch</span></span>
+          <span class="brand-tag">CINEMA P2P</span>
+        </div>
+      </div>
+
+      <!-- Ad-Free Shield Badge -->
+      <button class="badge-shield" id="btn-shield-info" title="Ad-Free & Privacy Shield Active">
+        <i data-lucide="shield-check"></i>
+        <span>Ad-Free Shield</span>
+        <span class="shield-pulse"></span>
+      </button>
+    </div>
+
+    <div class="header-center">
+      <!-- Active Room Info Bar -->
+      <div class="room-pill" id="room-pill">
+        <div class="status-dot online"></div>
+        <span class="room-label">Room:</span>
+        <span class="room-id-display" id="room-id-display">Connecting...</span>
+        <button class="icon-btn-pill" id="btn-copy-invite" title="Copy Invite Link">
+          <i data-lucide="link"></i>
+          <span class="btn-text-desktop">Copy Link</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Media Source Trigger -->
+      <button class="btn-action primary" id="btn-open-source-modal">
+        <i data-lucide="disc-3"></i>
+        <span class="btn-text-desktop">Change Video</span>
+      </button>
+
+      <!-- Room Host Settings Toggle -->
+      <button class="icon-btn" id="btn-room-settings" title="Room & Permission Settings">
+        <i data-lucide="sliders-horizontal"></i>
+      </button>
+
+      <!-- User Profile / Mic Status Button -->
+      <div class="user-profile-badge" id="btn-profile">
+        <div class="avatar-ring" id="my-avatar-ring">
+          <div class="avatar-circle" id="my-avatar-letter">U</div>
+        </div>
+        <span class="my-username" id="my-username-display">User</span>
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="icon-btn mobile-only" id="btn-toggle-drawer" aria-label="Toggle Chat and Voice Sidebar">
+        <i data-lucide="messages-square"></i>
+        <span class="unread-dot hidden" id="unread-dot"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <main class="main-layout">
+    <!-- Cinema Stage / Video Player Area -->
+    <section class="cinema-stage" id="cinema-stage">
+      <!-- Ambient Glow behind video -->
+      <div class="ambient-glow" id="ambient-glow"></div>
+
+      <!-- Video Wrapper Container -->
+      <div class="video-container" id="video-container">
+        <!-- Floating Reactions Overlay (P2P Emoji Stream) -->
+        <div class="reactions-overlay" id="reactions-overlay"></div>
+
+        <!-- Notification Toast Overlay over Video -->
+        <div class="video-toast-container" id="video-toast-container"></div>
+
+        <!-- YouTube Player Mount -->
+        <div id="youtube-player" class="video-element hidden"></div>
+
+        <!-- HTML5 Video Element for Direct MP4 / M3U8 / Local / Screen Share -->
+        <video id="html5-player" class="video-element" playsinline crossorigin="anonymous"></video>
+
+        <!-- Sandboxed Web Embed IFrame (for en.yts.lu and web sites) -->
+        <iframe id="web-embed-iframe" class="video-element hidden" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="no-referrer"></iframe>
+
+        <!-- Web Navigation Bar (visible when web embed is active) -->
+        <div class="web-nav-bar hidden" id="web-nav-bar">
+          <div class="web-nav-left">
+            <span class="web-badge"><i data-lucide="globe"></i> Web Embed</span>
+            <span class="shield-mini-badge" title="Popups and scam redirects blocked"><i data-lucide="shield-check"></i> Popups Blocked</span>
+          </div>
+          <div class="web-nav-center">
+            <input type="text" id="web-nav-url" readonly />
+          </div>
+          <div class="web-nav-right">
+            <button class="web-nav-btn" id="btn-web-refresh" title="Reload Page"><i data-lucide="rotate-cw"></i></button>
+            <button class="web-nav-btn" id="btn-web-external" title="Open in New Tab"><i data-lucide="external-link"></i></button>
+          </div>
+        </div>
+
+        <!-- Placeholder / No Source Screen -->
+        <div class="empty-player-state" id="empty-player-state">
+          <div class="empty-card">
+            <div class="empty-icon-glow">
+              <i data-lucide="clapperboard"></i>
+            </div>
+            <h2>No Video Playing</h2>
+            <p>Paste a YouTube URL, direct movie link (.mp4 / .m3u8), or share your screen.</p>
+            <div class="empty-actions">
+              <button class="btn-action primary pulse" id="btn-empty-load">
+                <i data-lucide="plus-circle"></i>
+                Select Video Source
+              </button>
+            </div>
+            <div class="feature-badges">
+              <span><i data-lucide="zap"></i> Zero Ads & Popups</span>
+              <span><i data-lucide="mic"></i> Free Voice Chat</span>
+              <span><i data-lucide="sparkles"></i> 100% Free P2P</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stream Loading Overlay -->
+        <div class="player-loading-spinner hidden" id="player-loading-spinner">
+          <div class="spinner"></div>
+          <span id="loading-text">Buffering Stream...</span>
+        </div>
+
+        <!-- Custom Video Controls Overlay -->
+        <div class="video-controls-overlay" id="video-controls-overlay">
+          <!-- Progress / Scrubber Bar -->
+          <div class="progress-bar-container" id="progress-container">
+            <div class="progress-buffer" id="progress-buffer"></div>
+            <div class="progress-filled" id="progress-filled"></div>
+            <div class="progress-thumb" id="progress-thumb"></div>
+            <div class="progress-tooltip" id="progress-tooltip">00:00</div>
+          </div>
+
+          <div class="controls-row">
+            <!-- Left Controls: Play/Pause, Volume, Time -->
+            <div class="controls-group-left">
+              <button class="ctrl-btn" id="ctrl-play-pause" title="Play/Pause (Space)">
+                <i data-lucide="play" id="icon-play"></i>
+                <i data-lucide="pause" id="icon-pause" class="hidden"></i>
+              </button>
+
+              <button class="ctrl-btn" id="ctrl-sync-catchup" title="Resync with Host">
+                <i data-lucide="refresh-cw"></i>
+              </button>
+
+              <div class="volume-control-group">
+                <button class="ctrl-btn" id="ctrl-volume-btn" title="Mute/Unmute">
+                  <i data-lucide="volume-2" id="icon-vol-high"></i>
+                  <i data-lucide="volume-x" id="icon-vol-mute" class="hidden"></i>
+                </button>
+                <input type="range" class="volume-slider" id="ctrl-volume-slider" min="0" max="1" step="0.05" value="1" />
+              </div>
+
+              <div class="time-display">
+                <span id="time-current">00:00</span>
+                <span class="time-divider">/</span>
+                <span id="time-total">00:00</span>
+              </div>
+            </div>
+
+            <!-- Center Controls: Source Info Tag -->
+            <div class="controls-group-center">
+              <div class="current-source-badge" id="current-source-badge">
+                <i data-lucide="film"></i>
+                <span id="source-title-text">Waiting for Video</span>
+              </div>
+            </div>
+
+            <!-- Right Controls: Speed, Theater, Fullscreen -->
+            <div class="controls-group-right">
+              <div class="speed-dropdown-wrapper">
+                <button class="ctrl-btn text-btn" id="ctrl-speed-btn" title="Playback Speed">1.0x</button>
+                <div class="speed-menu hidden" id="speed-menu">
+                  <button class="speed-option" data-speed="0.5">0.5x</button>
+                  <button class="speed-option" data-speed="0.75">0.75x</button>
+                  <button class="speed-option active" data-speed="1.0">1.0x</button>
+                  <button class="speed-option" data-speed="1.25">1.25x</button>
+                  <button class="speed-option" data-speed="1.5">1.5x</button>
+                  <button class="speed-option" data-speed="2.0">2.0x</button>
+                </div>
+              </div>
+
+              <button class="ctrl-btn" id="ctrl-theater-btn" title="Theater Mode">
+                <i data-lucide="rectangle-horizontal"></i>
+              </button>
+
+              <button class="ctrl-btn" id="ctrl-fullscreen-btn" title="Fullscreen (F)">
+                <i data-lucide="maximize" id="icon-fullscreen"></i>
+                <i data-lucide="minimize" id="icon-exit-fullscreen" class="hidden"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Floating Reaction Bar below video -->
+      <div class="quick-reactions-bar">
+        <span class="reactions-label">Live Reactions:</span>
+        <div class="reaction-buttons">
+          <button class="reaction-btn" data-emoji="🍿" title="Popcorn">🍿</button>
+          <button class="reaction-btn" data-emoji="❤️" title="Love">❤️</button>
+          <button class="reaction-btn" data-emoji="😂" title="Laugh">😂</button>
+          <button class="reaction-btn" data-emoji="🔥" title="Fire">🔥</button>
+          <button class="reaction-btn" data-emoji="😱" title="Shocked">😱</button>
+          <button class="reaction-btn" data-emoji="👏" title="Applause">👏</button>
+          <button class="reaction-btn" data-emoji="💀" title="Dead">💀</button>
+        </div>
+        <div class="sync-status-indicator" id="sync-status-indicator">
+          <span class="sync-dot in-sync"></span>
+          <span class="sync-text" id="sync-status-text">Synchronized</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Side Dock: Voice Chat & Live Chat -->
+    <aside class="side-dock" id="side-dock">
+      <div class="dock-header">
+        <div class="dock-tabs">
+          <button class="dock-tab active" id="tab-btn-chat" data-tab="chat">
+            <i data-lucide="message-square"></i>
+            <span>Chat</span>
+          </button>
+          <button class="dock-tab" id="tab-btn-voice" data-tab="voice">
+            <i data-lucide="mic"></i>
+            <span>Voice & Members</span>
+            <span class="badge-count" id="voice-count-badge">1</span>
+          </button>
+        </div>
+        <button class="icon-btn close-dock-btn mobile-only" id="btn-close-dock">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Live Chat Panel -->
+      <div class="dock-panel active" id="panel-chat">
+        <div class="chat-messages-container" id="chat-messages">
+          <div class="system-message welcome">
+            <div class="sys-icon"><i data-lucide="sparkles"></i></div>
+            <div class="sys-content">
+              <strong>Welcome to CoWatch Cinema!</strong>
+              <p>Invite friends using the link above. Chat and voice are 100% peer-to-peer and private.</p>
+            </div>
+          </div>
+        </div>
+
+        <form class="chat-input-bar" id="chat-form">
+          <input type="text" id="chat-input" placeholder="Send a message to room..." maxlength="280" autocomplete="off" />
+          <button type="submit" class="btn-send" id="btn-chat-send" title="Send Message">
+            <i data-lucide="send"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Voice & Members Panel -->
+      <div class="dock-panel" id="panel-voice">
+        <!-- Voice Control Master Card -->
+        <div class="voice-card-master">
+          <div class="voice-status-info">
+            <div class="voice-signal-icon" id="voice-signal-icon">
+              <i data-lucide="radio"></i>
+            </div>
+            <div>
+              <div class="voice-title">P2P Voice Channel</div>
+              <div class="voice-subtitle" id="voice-status-desc">Microphone is off</div>
+            </div>
+          </div>
+
+          <div class="voice-actions">
+            <button class="btn-mic-toggle" id="btn-toggle-mic">
+              <i data-lucide="mic-off" id="icon-mic-off"></i>
+              <i data-lucide="mic" id="icon-mic-on" class="hidden"></i>
+              <span id="text-mic-btn">Join Voice</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Connected Room Members List -->
+        <div class="members-section">
+          <div class="section-title-row">
+            <span>Room Members (<span id="member-count">1</span>)</span>
+            <span class="p2p-badge"><i data-lucide="cpu"></i> Mesh P2P</span>
+          </div>
+          <div class="members-list" id="members-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Voice Settings Helper -->
+        <div class="voice-audio-settings">
+          <div class="setting-row">
+            <label for="local-noise-suppression">Noise Suppression</label>
+            <input type="checkbox" id="local-noise-suppression" checked />
+          </div>
+          <div class="setting-row">
+            <label for="local-echo-cancellation">Echo Cancellation</label>
+            <input type="checkbox" id="local-echo-cancellation" checked />
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Source Selector Modal -->
+  <div class="modal-backdrop hidden" id="modal-source">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-glow"><i data-lucide="clapperboard"></i></div>
+          <div>
+            <h3>Choose Video Source</h3>
+            <p>Watch YouTube, raw streaming links, your screen, or local files</p>
+          </div>
+        </div>
+        <button class="icon-btn btn-close-modal" data-close="modal-source"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- Source Navigation Tabs -->
+      <div class="source-nav-tabs">
+        <button class="source-tab-btn active" data-source="youtube">
+          <i data-lucide="youtube"></i>
+          <span>YouTube</span>
+        </button>
+        <button class="source-tab-btn" data-source="stream">
+          <i data-lucide="globe"></i>
+          <span>Direct URL (.mp4 / .m3u8)</span>
+        </button>
+        <button class="source-tab-btn" data-source="screen">
+          <i data-lucide="screen-share"></i>
+          <span>Screen / Tab Share</span>
+        </button>
+        <button class="source-tab-btn" data-source="local">
+          <i data-lucide="folder-video"></i>
+          <span>Local File</span>
+        </button>
+        <button class="source-tab-btn" data-source="web">
+          <i data-lucide="globe-2"></i>
+          <span>Embed Web / YTS</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: YouTube -->
+      <div class="source-tab-content active" id="tab-src-youtube">
+        <div class="form-group">
+          <label for="input-yt-url">YouTube Video or Shorts URL</label>
+          <div class="input-with-action">
+            <input type="url" id="input-yt-url" placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+            <button class="btn-action primary" id="btn-load-yt">Load Video</button>
+          </div>
+          <p class="field-hint">
+            <i data-lucide="shield-check"></i> Loaded via <code>youtube-nocookie.com</code> privacy mode with suppressed recommendations.
+          </p>
+        </div>
+
+        <div class="sample-links">
+          <span>Try popular sample:</span>
+          <button class="tag-sample" data-url="https://www.youtube.com/watch?v=L_LUpnjgPso">Big Buck Bunny (4K)</button>
+          <button class="tag-sample" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Rick Astley</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Direct Video Stream (MP4 / HLS M3U8) -->
+      <div class="source-tab-content" id="tab-src-stream">
+        <div class="ad-free-banner">
+          <i data-lucide="shield-alert"></i>
+          <div>
+            <strong>Popup & Ad-Free Protection</strong>
+            <p>Paste the direct <code>.mp4</code> or <code>.m3u8</code> stream from free movie/anime sites. CoWatch plays only the raw stream, completely skipping popups and scam banners!</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-stream-url">Direct Video Stream URL</label>
+          <div class="input-with-action">
+            <input type="url" id="input-stream-url" placeholder="https://domain.com/movie.mp4 or https://domain.com/playlist.m3u8" />
+            <button class="btn-action primary" id="btn-load-stream">Load Stream</button>
+          </div>
+          <p class="field-hint">Supports MP4, WebM, and HLS (.m3u8) streams.</p>
+        </div>
+
+        <div class="sample-links">
+          <span>Try open public streams:</span>
+          <button class="tag-sample-stream" data-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4">Tears of Steel (MP4)</button>
+          <button class="tag-sample-stream" data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">Big Buck Bunny (HLS .m3u8)</button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Screen / Browser Tab Share -->
+      <div class="source-tab-content" id="tab-src-screen">
+        <div class="screen-share-info">
+          <div class="screen-icon-box"><i data-lucide="cast"></i></div>
+          <h4>Stream Any Browser Tab or Application</h4>
+          <p>If you're on PC, you can stream Netflix, Crunchyroll, or any movie tab directly with audio to your friends on mobile and desktop.</p>
+          
+          <div class="tip-box">
+            <i data-lucide="info"></i>
+            <span><strong>Tip for Netflix on PC:</strong> Turn OFF "Hardware Acceleration" in Chrome/Edge Settings to prevent black screens. Make sure to check <em>"Share tab audio"</em>.</span>
+          </div>
+
+          <button class="btn-action primary btn-large" id="btn-start-screenshare">
+            <i data-lucide="screen-share"></i>
+            Start Screen / Tab Broadcast
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 4: Local Video File Sync -->
+      <div class="source-tab-content" id="tab-src-local">
+        <div class="local-file-box">
+          <div class="drop-zone" id="local-file-dropzone">
+            <i data-lucide="file-video"></i>
+            <h4>Choose a video file from your computer</h4>
+            <p>Drag and drop or click to select (.mp4, .mkv, .webm)</p>
+            <input type="file" id="input-local-file" accept="video/mp4,video/webm,video/ogg,video/quicktime" class="hidden-file-input" />
+            <button class="btn-action secondary" id="btn-browse-file">Browse File</button>
+          </div>
+          <p class="field-hint">
+            <strong>How Local Sync works:</strong> If you and your friends both have the same downloaded movie file, you each select it. CoWatch syncs play/pause timestamps with <strong>zero data upload</strong> and zero buffering!
+          </p>
+        </div>
+      </div>
+
+      <!-- Tab 5: Embed Website (YTS, YouTube Embed, etc.) -->
+      <div class="source-tab-content" id="tab-src-web">
+        <div class="ad-free-banner">
+          <i data-lucide="shield-check"></i>
+          <div>
+            <strong>Sandboxed Pop-Up & Ad-Free Protection</strong>
+            <p>Embed movie websites like YTS (<a href="https://en.yts.lu/" target="_blank" style="color:var(--accent-cyan);text-decoration:underline;">en.yts.lu</a>) directly inside CoWatch. Our browser sandbox allows searching and viewing while <strong>completely blocking pop-ups and scam redirects</strong>!</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-web-url">Website or Movie Catalog URL</label>
+          <div class="input-with-action">
+            <input type="url" id="input-web-url" placeholder="https://en.yts.lu/ or any movie site" value="https://en.yts.lu/" />
+            <button class="btn-action primary" id="btn-load-web">Embed Website</button>
+          </div>
+          <p class="field-hint">
+            <i data-lucide="info"></i> Synchronizes across all room members so you can browse and choose movies together.
+          </p>
+        </div>
+
+        <div class="sample-links">
+          <span>Quick Presets:</span>
+          <button class="tag-sample-web" data-url="https://en.yts.lu/">🍿 YTS Movies (en.yts.lu)</button>
+          <button class="tag-sample-web" data-url="https://archive.org/details/feature_films">🏛️ Archive.org Movies</button>
+          <button class="tag-sample-web" data-url="https://www.youtube.com/embed?listType=search&list=movies">🎬 YouTube Search</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad-Free Shield Explanation Modal -->
+  <div class="modal-backdrop hidden" id="modal-shield">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-glow green"><i data-lucide="shield-check"></i></div>
+          <div>
+            <h3>Brave-Style Ad-Free Architecture</h3>
+            <p>How CoWatch keeps your movie nights clean and private</p>
+          </div>
+        </div>
+        <button class="icon-btn btn-close-modal" data-close="modal-shield"><i data-lucide="x"></i></button>
+      </div>
+      <div class="shield-benefits-list">
+        <div class="shield-benefit-item">
+          <div class="benefit-icon"><i data-lucide="ban"></i></div>
+          <div>
+            <strong>Zero Popups & Malicious Redirects</strong>
+            <p>Free movie websites are notorious for invasive pop-ups and fake download buttons. CoWatch pulls only the raw video feed, completely stripping the website's ads.</p>
+          </div>
+        </div>
+        <div class="shield-benefit-item">
+          <div class="benefit-icon"><i data-lucide="eye-off"></i></div>
+          <div>
+            <strong>YouTube Privacy-Enhanced Player</strong>
+            <p>YouTube is loaded via <code>youtube-nocookie.com</code> with recommendation clutter disabled and annotations stripped.</p>
+          </div>
+        </div>
+        <div class="shield-benefit-item">
+          <div class="benefit-icon"><i data-lucide="lock"></i></div>
+          <div>
+            <strong>Zero Tracking & 100% Serverless</strong>
+            <p>No account required, no database tracking your viewing history, and all chat/audio is direct peer-to-peer over encrypted WebRTC.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Settings Modal -->
+  <div class="modal-backdrop hidden" id="modal-settings">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-glow"><i data-lucide="settings"></i></div>
+          <div>
+            <h3>Room Settings</h3>
+            <p>Control permissions and playback authority</p>
+          </div>
+        </div>
+        <button class="icon-btn btn-close-modal" data-close="modal-settings"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="settings-list">
+        <div class="setting-item">
+          <div class="setting-info">
+            <strong>Host Control Lock</strong>
+            <p>When enabled, only the room host can play, pause, seek, or change the video.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-host-only-ctrl" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <strong>Display Name</strong>
+            <p>Your name shown in chat and voice calls</p>
+          </div>
+          <div class="setting-input-wrapper">
+            <input type="text" id="setting-username" maxlength="20" placeholder="Enter name" />
+            <button class="btn-action secondary" id="btn-save-username">Save</button>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <strong>Share Room Code</strong>
+            <p>Give this code to friends who want to join manually</p>
+          </div>
+          <div class="room-code-badge" id="settings-room-code">------</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- Scripts -->
+  <script src="js/p2p.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
