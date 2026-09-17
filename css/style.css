@@ -485,6 +485,33 @@ body.cinema-theme {
   gap: 4px;
 }
 
+.shield-toggle-btn {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid var(--accent-green);
+  color: var(--accent-green);
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.shield-toggle-btn:hover {
+  background: rgba(16, 185, 129, 0.28);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.shield-toggle-btn.off {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
 .web-nav-center {
   flex: 1;
   max-width: 520px;

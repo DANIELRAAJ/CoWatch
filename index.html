@@ -133,14 +133,18 @@
         <!-- HTML5 Video Element for Direct MP4 / M3U8 / Local / Screen Share -->
         <video id="html5-player" class="video-element" playsinline crossorigin="anonymous"></video>
 
-        <!-- Web Embed IFrame (Permits full video streaming player playback) -->
-        <iframe id="web-embed-iframe" class="video-element hidden" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe>
+        <!-- Web Embed IFrame (With 1-Click Toggleable Pop-up Blocker Sandbox) -->
+        <iframe id="web-embed-iframe" class="video-element hidden" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe>
 
         <!-- Web Navigation Bar (visible when web embed is active) -->
         <div class="web-nav-bar hidden" id="web-nav-bar">
           <div class="web-nav-left">
             <span class="web-badge"><i data-lucide="globe"></i> Web Embed</span>
-            <span class="shield-mini-badge" title="Cinema Web Player Active"><i data-lucide="play-circle"></i> Cinema Stream Active</span>
+            <button class="shield-toggle-btn active" id="btn-toggle-popup-blocker" title="Toggle Pop-Up Blocker Sandbox">
+              <i data-lucide="shield-check" id="icon-shield-on"></i>
+              <i data-lucide="shield-off" id="icon-shield-off" class="hidden"></i>
+              <span id="text-shield-status">Pop-Up Blocker: ON</span>
+            </button>
           </div>
           <div class="web-nav-center">
             <input type="text" id="web-nav-url" readonly />

@@ -543,6 +543,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Pop-Up Blocker Sandbox Toggle Button
+  const btnTogglePopupBlocker = document.getElementById('btn-toggle-popup-blocker');
+  let isPopupBlockerOn = true;
+
+  if (btnTogglePopupBlocker) {
+    btnTogglePopupBlocker.addEventListener('click', () => {
+      isPopupBlockerOn = !isPopupBlockerOn;
+      const iframe = window.player.webIframe;
+      const textStatus = document.getElementById('text-shield-status');
+      const iconOn = document.getElementById('icon-shield-on');
+      const iconOff = document.getElementById('icon-shield-off');
+
+      if (isPopupBlockerOn) {
+        btnTogglePopupBlocker.classList.remove('off');
+        btnTogglePopupBlocker.classList.add('active');
+        if (textStatus) textStatus.textContent = 'Pop-Up Blocker: ON';
+        if (iconOn) iconOn.classList.remove('hidden');
+        if (iconOff) iconOff.classList.add('hidden');
+        if (iframe) {
+          iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock');
+          if (window.player.currentSourceUrl) {
+            iframe.src = window.player.currentSourceUrl;
+          }
+        }
+        showToast('🛡️ Pop-Up Blocker ACTIVE: Popups & redirect tabs are blocked!', 'success');
+      } else {
+        btnTogglePopupBlocker.classList.add('off');
+        btnTogglePopupBlocker.classList.remove('active');
+        if (textStatus) textStatus.textContent = 'Pop-Up Blocker: OFF (Compat Mode)';
+        if (iconOn) iconOn.classList.add('hidden');
+        if (iconOff) iconOff.classList.remove('hidden');
+        if (iframe) {
+          iframe.removeAttribute('sandbox');
+          if (window.player.currentSourceUrl) {
+            iframe.src = window.player.currentSourceUrl;
+          }
+        }
+        showToast('⚠️ Pop-Up Blocker OFF: Full player compatibility enabled.', 'warning');
+      }
+    });
+  }
+
   // Copy Room Invite Link
   btnCopyInvite.addEventListener('click', () => {
     const shareUrl = window.location.href;
