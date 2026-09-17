@@ -436,11 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  btnOpenSourceModal.addEventListener('click', () => openModal(modalSource));
-  btnEmptyLoad.addEventListener('click', () => openModal(modalSource));
-  btnShieldInfo.addEventListener('click', () => openModal(modalShield));
-  btnRoomSettings.addEventListener('click', () => openModal(modalSettings));
-  document.getElementById('btn-profile').addEventListener('click', () => openModal(modalSettings));
+  if (btnOpenSourceModal) btnOpenSourceModal.addEventListener('click', () => openModal(modalSource));
+  if (btnEmptyLoad) btnEmptyLoad.addEventListener('click', () => openModal(modalSource));
+  if (btnShieldInfo) btnShieldInfo.addEventListener('click', () => openModal(modalShield));
+  if (btnRoomSettings) btnRoomSettings.addEventListener('click', () => openModal(modalSettings));
+  document.getElementById('btn-profile')?.addEventListener('click', () => openModal(modalSettings));
 
   // Source Modal Tabs
   document.querySelectorAll('.source-tab-btn').forEach(btn => {
@@ -568,6 +568,103 @@ document.addEventListener('DOMContentLoaded', () => {
   settingHostOnlyCtrl.addEventListener('change', (e) => {
     window.player.hostOnlyControl = e.target.checked;
     showToast(e.target.checked ? 'Host Lock enabled: Only Host can control playback' : 'Free-for-All: Anyone can control video', 'info');
+  });
+
+  // ==========================================================================
+  // Cinema Hub & Stage Quick Switcher Pills
+  // ==========================================================================
+  const stagePillYts = document.getElementById('stage-pill-yts');
+  const stagePillYt = document.getElementById('stage-pill-yt');
+  const stagePillStream = document.getElementById('stage-pill-stream');
+  const stagePillScreen = document.getElementById('stage-pill-screen');
+  const stagePillLocal = document.getElementById('stage-pill-local');
+
+  const btnQuickYts = document.getElementById('btn-quick-yts');
+  const btnQuickYt = document.getElementById('btn-quick-yt');
+  const hubQuickUrlForm = document.getElementById('hub-quick-url-form');
+  const hubUrlInput = document.getElementById('hub-url-input');
+
+  // Stage Pills Handlers
+  if (stagePillYts) {
+    stagePillYts.addEventListener('click', () => {
+      window.player.loadWebEmbed('https://en.yts.lu/');
+    });
+  }
+
+  if (stagePillYt) {
+    stagePillYt.addEventListener('click', () => {
+      const modal = document.getElementById('modal-source');
+      openModal(modal);
+      document.querySelector('.source-tab-btn[data-source="youtube"]')?.click();
+    });
+  }
+
+  if (stagePillStream) {
+    stagePillStream.addEventListener('click', () => {
+      const modal = document.getElementById('modal-source');
+      openModal(modal);
+      document.querySelector('.source-tab-btn[data-source="stream"]')?.click();
+    });
+  }
+
+  if (stagePillScreen) {
+    stagePillScreen.addEventListener('click', async () => {
+      await window.player.startScreenShare();
+    });
+  }
+
+  if (stagePillLocal) {
+    stagePillLocal.addEventListener('click', () => {
+      inputLocalFile.click();
+    });
+  }
+
+  // Quick Hub Launchers
+  if (btnQuickYts) {
+    btnQuickYts.addEventListener('click', () => {
+      window.player.loadWebEmbed('https://en.yts.lu/');
+    });
+  }
+
+  if (btnQuickYt) {
+    btnQuickYt.addEventListener('click', () => {
+      window.player.loadYouTube('https://www.youtube.com/watch?v=L_LUpnjgPso');
+    });
+  }
+
+  // Home Screen Quick URL Bar (Intelligently detects YouTube, Stream, or Website)
+  if (hubQuickUrlForm) {
+    hubQuickUrlForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = hubUrlInput.value.trim();
+      if (!url) return;
+
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        window.player.loadYouTube(url);
+      } else if (url.includes('.mp4') || url.includes('.m3u8') || url.includes('.webm')) {
+        window.player.loadDirectStream(url);
+      } else {
+        window.player.loadWebEmbed(url);
+      }
+    });
+  }
+
+  // Quick Picks Chips
+  document.querySelectorAll('.pick-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const type = chip.dataset.type;
+      const val = chip.dataset.val;
+
+      if (type === 'yts') {
+        window.player.loadWebEmbed(val || 'https://en.yts.lu/');
+      } else if (type === 'yt') {
+        window.player.loadYouTube(val);
+      } else if (type === 'stream') {
+        window.player.loadDirectStream(val);
+      } else if (type === 'screen') {
+        window.player.startScreenShare();
+      }
+    });
   });
 
   // ==========================================================================

@@ -14,6 +14,7 @@ class UnifiedPlayer {
     this.isApplyingRemoteState = false;
 
     // Elements
+    this.videoContainer = document.getElementById('video-container');
     this.html5Player = document.getElementById('html5-player');
     this.ytContainer = document.getElementById('youtube-player');
     this.webIframe = document.getElementById('web-embed-iframe');
@@ -53,6 +54,9 @@ class UnifiedPlayer {
     this.initYouTubeApi();
     this.setupHtml5Events();
     this.startProgressTicker();
+    if (this.videoContainer) {
+      this.videoContainer.classList.add('hub-mode');
+    }
   }
 
   /**
@@ -139,6 +143,14 @@ class UnifiedPlayer {
     this.emptyState.classList.add('hidden');
     this.html5Player.classList.add('hidden');
     this.ytContainer.classList.remove('hidden');
+    if (this.webIframe) this.webIframe.classList.add('hidden');
+    if (this.webNavBar) this.webNavBar.classList.add('hidden');
+
+    if (this.videoContainer) {
+      this.videoContainer.classList.remove('hub-mode');
+      this.videoContainer.classList.remove('web-mode');
+    }
+
     this.sourceTitleText.textContent = `YouTube: ${videoId}`;
 
     const createPlayer = () => {
@@ -229,6 +241,13 @@ class UnifiedPlayer {
     this.emptyState.classList.add('hidden');
     this.ytContainer.classList.add('hidden');
     this.html5Player.classList.remove('hidden');
+    if (this.webIframe) this.webIframe.classList.add('hidden');
+    if (this.webNavBar) this.webNavBar.classList.add('hidden');
+
+    if (this.videoContainer) {
+      this.videoContainer.classList.remove('hub-mode');
+      this.videoContainer.classList.remove('web-mode');
+    }
 
     const filename = url.split('/').pop().split('?')[0] || 'Stream';
     this.sourceTitleText.textContent = filename.substring(0, 24);
@@ -390,6 +409,11 @@ class UnifiedPlayer {
     const hostname = normalizedUrl.replace(/^https?:\/\//i, '').split('/')[0];
     this.sourceTitleText.textContent = `🌐 ${hostname || 'Web'}`;
 
+    if (this.videoContainer) {
+      this.videoContainer.classList.remove('hub-mode');
+      this.videoContainer.classList.add('web-mode');
+    }
+
     if (this.canUserControl()) {
       this.broadcastCurrentState('load');
     }
@@ -427,6 +451,14 @@ class UnifiedPlayer {
     this.emptyState.classList.remove('hidden');
     this.ytContainer.classList.add('hidden');
     this.html5Player.classList.add('hidden');
+    if (this.webIframe) this.webIframe.classList.add('hidden');
+    if (this.webNavBar) this.webNavBar.classList.add('hidden');
+
+    if (this.videoContainer) {
+      this.videoContainer.classList.add('hub-mode');
+      this.videoContainer.classList.remove('web-mode');
+    }
+
     this.sourceTitleText.textContent = 'Waiting for Video';
     this.isPlaying = false;
     this.updatePlayPauseIcons(false);

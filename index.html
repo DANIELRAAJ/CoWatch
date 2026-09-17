@@ -20,7 +20,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=1.1" />
 </head>
 <body class="cinema-theme">
   <!-- Audio Elements Container for VoIP -->
@@ -95,6 +95,30 @@
       <!-- Ambient Glow behind video -->
       <div class="ambient-glow" id="ambient-glow"></div>
 
+      <!-- Stage Source Quick Switcher Bar -->
+      <div class="stage-source-bar">
+        <button class="stage-pill" id="stage-pill-yts">
+          <i data-lucide="film"></i>
+          <span>🍿 YTS Movies (en.yts.lu)</span>
+        </button>
+        <button class="stage-pill" id="stage-pill-yt">
+          <i data-lucide="youtube"></i>
+          <span>🔴 YouTube</span>
+        </button>
+        <button class="stage-pill" id="stage-pill-stream">
+          <i data-lucide="globe"></i>
+          <span>🌐 Direct Stream</span>
+        </button>
+        <button class="stage-pill" id="stage-pill-screen">
+          <i data-lucide="screen-share"></i>
+          <span>🖥️ Screen Share</span>
+        </button>
+        <button class="stage-pill" id="stage-pill-local">
+          <i data-lucide="folder-video"></i>
+          <span>📁 Local File</span>
+        </button>
+      </div>
+
       <!-- Video Wrapper Container -->
       <div class="video-container" id="video-container">
         <!-- Floating Reactions Overlay (P2P Emoji Stream) -->
@@ -127,24 +151,51 @@
           </div>
         </div>
 
-        <!-- Placeholder / No Source Screen -->
+        <!-- Home Screen Cinema Discovery Hub -->
         <div class="empty-player-state" id="empty-player-state">
-          <div class="empty-card">
-            <div class="empty-icon-glow">
-              <i data-lucide="clapperboard"></i>
+          <div class="hub-container">
+            <div class="hub-header">
+              <div class="hub-badge"><i data-lucide="sparkles"></i> Cinema Hub</div>
+              <h2>What would you like to watch?</h2>
+              <p>Choose an embedded website like YTS, YouTube, or paste any video URL to start streaming together with friends.</p>
             </div>
-            <h2>No Video Playing</h2>
-            <p>Paste a YouTube URL, direct movie link (.mp4 / .m3u8), or share your screen.</p>
-            <div class="empty-actions">
-              <button class="btn-action primary pulse" id="btn-empty-load">
-                <i data-lucide="plus-circle"></i>
-                Select Video Source
+
+            <!-- Featured 1-Click Launchers -->
+            <div class="hub-quick-launch">
+              <button class="hub-feature-btn yts-btn pulse" id="btn-quick-yts">
+                <div class="btn-icon-wrap"><i data-lucide="film"></i></div>
+                <div class="btn-text-wrap">
+                  <strong>🍿 Embed YTS Movies (en.yts.lu)</strong>
+                  <span>Browse full movie catalog directly inside with pop-up blocking</span>
+                </div>
+                <i data-lucide="chevron-right" class="arrow-icon"></i>
+              </button>
+
+              <button class="hub-feature-btn yt-btn" id="btn-quick-yt">
+                <div class="btn-icon-wrap"><i data-lucide="youtube"></i></div>
+                <div class="btn-text-wrap">
+                  <strong>🔴 YouTube Cinema Player</strong>
+                  <span>Synchronized YouTube playback without ad clutter</span>
+                </div>
+                <i data-lucide="chevron-right" class="arrow-icon"></i>
               </button>
             </div>
-            <div class="feature-badges">
-              <span><i data-lucide="zap"></i> Zero Ads & Popups</span>
-              <span><i data-lucide="mic"></i> Free Voice Chat</span>
-              <span><i data-lucide="sparkles"></i> 100% Free P2P</span>
+
+            <!-- Quick Direct URL Input Bar right on the home screen -->
+            <form class="hub-url-bar" id="hub-quick-url-form">
+              <i data-lucide="link" class="url-bar-icon"></i>
+              <input type="url" id="hub-url-input" placeholder="Paste YouTube link, movie stream (.mp4 / .m3u8), or web URL..." />
+              <button type="submit" class="btn-action primary">Play Now</button>
+            </form>
+
+            <!-- Popular Quick Picks -->
+            <div class="hub-picks-row">
+              <span class="picks-title">Quick Picks:</span>
+              <button class="pick-chip" data-type="yts" data-val="https://en.yts.lu/">🍿 YTS Catalog</button>
+              <button class="pick-chip" data-type="yt" data-val="https://www.youtube.com/watch?v=L_LUpnjgPso">🎬 Big Buck Bunny (4K)</button>
+              <button class="pick-chip" data-type="stream" data-val="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4">🚀 Tears of Steel (MP4)</button>
+              <button class="pick-chip" data-type="yt" data-val="https://www.youtube.com/watch?v=dQw4w9WgXcQ">🎵 Rick Astley</button>
+              <button class="pick-chip" data-type="screen">🖥️ Screen Share</button>
             </div>
           </div>
         </div>
@@ -577,8 +628,8 @@
   <div class="toast-stack" id="toast-stack"></div>
 
   <!-- Scripts -->
-  <script src="js/p2p.js"></script>
-  <script src="js/player.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/p2p.js?v=1.1"></script>
+  <script src="js/player.js?v=1.1"></script>
+  <script src="js/app.js?v=1.1"></script>
 </body>
 </html>
